@@ -143,62 +143,6 @@ def load_model_from_minio(minio_client, minio_bucket, minio_data_path, local_mod
         return None
 
 
-def stream_large_object_to_dataframes(minio_client, minio_bucket, object_name, chunk_size=5000000, sep=';'):
-    """
-    Stream a large CSV object from Minio in chunks and concatenate them into a Pandas DataFrame.
-
-    Parameters:
-    - minio_client (Minio): An initialized Minio client.
-    - minio_bucket (str): Name of the Minio bucket containing the CSV object.
-    - object_name (str): Name of the CSV object to stream.
-    - chunk_size (int): Size of each chunk to read from the object.
-    - sep (str, optional): Delimiter used in the CSV file. Default is ';'.
-
-
-    Returns:
-    - Generator of Pandas DataFrames: Yields Pandas DataFrames for each chunk of the CSV object.
-    """
-
-    try:
-        # Get the object metadata to determine its size
-        object_info = minio_client.stat_object(minio_bucket, object_name)
-        object_size = object_info.size
-
-        # Initialize variables to handle incomplete rows
-        remaining_line = ""
-
-        columns = None
-        # Iterate over chunks of the CSV object
-        for offset in range(0, object_size, chunk_size):
-            length = min(chunk_size, object_size - offset)
-            data = minio_client.get_object(minio_bucket, object_name, offset=offset, length=length)
-
-            # Read the chunk into a Pandas DataFrame
-            chunk_data = data.read().decode('utf-8')
-            lines = (remaining_line + chunk_data).split('\n')
-
-            remaining_line = lines[-1]
-
-            header = 'infer'
-            if offset != 0:
-                header = None
-
-            # df_chunk = pd.read_csv(io.StringIO('\n'.join(lines[:-1])), sep=sep, index_col=0, header=header)
-            df_chunk = pd.read_csv(io.StringIO('\n'.join(lines[:-1])), sep=sep, header=header)
-
-            # Handle column names for the second chunks onwards
-            if offset == 0:
-                columns = df_chunk.columns.values
-            else:
-                df_chunk.columns = columns
-
-            yield df_chunk
-
-    except Exception as e:
-        print(f"Error streaming data from MinIO: {e}")
-        return None
-
-
 def stream_csv_object_to_fixed_sized_dataframes(minio_client, minio_bucket, object_name, chunk_size=5000000, df_chunk_size=5000, sep=';'):
     """
     Stream a large CSV object from Minio in chunks and concatenate them into a Pandas DataFrame.
@@ -268,12 +212,6 @@ def stream_csv_object_to_fixed_sized_dataframes(minio_client, minio_bucket, obje
     except Exception as e:
         print(f"Error streaming data from MinIO: {e}")
         return None
-
-
-
-
-
-
 
 
 
