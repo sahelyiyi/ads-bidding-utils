@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ads_bidding_utils',
-    version='0.3.13',
+    version='0.3.14',
     packages=find_packages(),
     description='Python package for ads bidding utils',
     long_description=open('README.md').read(),
